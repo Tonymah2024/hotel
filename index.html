@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Analytics | Demo by VisiVault Analytics Ltd.</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #d1d5db;
+        }
+        .kpi-card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            position: relative;
+            height: 400px;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .modal-backdrop { background-color: rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="bg-gray-900/80 backdrop-blur-sm border-b border-gray-700 p-4 sticky top-0 z-10">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-400"><path d="M10 22v-6.57"/><path d="M12 11h.01"/><path d="M14 22v-6.57"/><path d="M15 22H9a2 2 0 0 1-2-2v-8.37a1 1 0 0 1 .4-.8L12 4.43l4.6 4.4a1 1 0 0 1 .4.8V20a2 2 0 0 1-2 2Z"/><path d="M18 18.5V22"/><path d="M6 18.5V22"/></svg>
+                    <h1 class="text-xl md:text-2xl font-bold text-white">Aurora Peaks Hotel | Demo by VisiVault Analytics Ltd.</h1>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow container mx-auto p-4 md:p-6 lg:p-8">
+            <!-- Filter Controls -->
+            <div class="mb-6 p-4 rounded-lg bg-gray-800 border border-gray-700 flex flex-wrap items-center gap-4">
+                <div class="flex-grow">
+                    <label for="date-range" class="text-sm font-medium text-gray-400 block mb-1">Date Range</label>
+                    <select id="date-range" class="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        <option>Last 7 Days</option>
+                        <option>Last 30 Days</option>
+                        <option>This Quarter</option>
+                    </select>
+                </div>
+                <div class="flex-grow">
+                    <label for="room-type" class="text-sm font-medium text-gray-400 block mb-1">Room Type</label>
+                    <select id="room-type" class="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        <option>All Types</option>
+                        <option>Standard</option>
+                        <option>Deluxe</option>
+                        <option>Suite</option>
+                    </select>
+                </div>
+                <div class="flex-grow">
+                     <label for="booking-source" class="text-sm font-medium text-gray-400 block mb-1">Booking Source</label>
+                    <select id="booking-source" class="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        <option>All Sources</option>
+                        <option>Direct</option>
+                        <option>OTAs</option>
+                        <option>Corporate</option>
+                    </select>
+                </div>
+                <div class="pt-6 flex flex-wrap gap-2">
+                    <button id="apply-filters-btn" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-md transition-colors">
+                        Apply Filters
+                    </button>
+                    <input type="file" id="file-input" class="hidden" accept=".json">
+                    <button id="load-data-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors">
+                        Load Data
+                    </button>
+                    <button id="generate-insights-btn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md transition-colors whitespace-nowrap">
+                        ✨ Generate Insights
+                    </button>
+                </div>
+            </div>
+            
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+                <div class="kpi-card p-5 rounded-lg">
+                    <div class="flex items-center justify-between"><p class="text-sm font-medium text-gray-400">Occupancy Rate</p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                    <div><p id="kpi-occupancy" class="text-3xl font-bold text-white mt-2">82.5%</p><p id="kpi-occupancy-change" class="text-xs text-green-400 flex items-center mt-1">+5.2% vs last week</p></div>
+                </div>
+                <div class="kpi-card p-5 rounded-lg">
+                    <div class="flex items-center justify-between"><p class="text-sm font-medium text-gray-400">Avg. Daily Rate (ADR)</p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                    <div><p id="kpi-adr" class="text-3xl font-bold text-white mt-2">$285.50 CAD</p><p id="kpi-adr-change" class="text-xs text-green-400 flex items-center mt-1">+$12.30 vs last week</p></div>
+                </div>
+                <div class="kpi-card p-5 rounded-lg">
+                    <div class="flex items-center justify-between"><p class="text-sm font-medium text-gray-400">RevPAR</p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></div>
+                    <div><p id="kpi-revpar" class="text-3xl font-bold text-white mt-2">$235.54 CAD</p><p id="kpi-revpar-change" class="text-xs text-green-400 flex items-center mt-1">+8.1% vs last week</p></div>
+                </div>
+                <div class="kpi-card p-5 rounded-lg">
+                    <div class="flex items-center justify-between"><p class="text-sm font-medium text-gray-400">Avg. Length of Stay</p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                    <div><p id="kpi-stay" class="text-3xl font-bold text-white mt-2">2.8 Nights</p><p id="kpi-stay-change" class="text-xs text-red-400 flex items-center mt-1">-0.2 nights vs last week</p></div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                <div class="chart-container"><h3 class="text-lg font-semibold text-white mb-4">Occupancy Rate Over Time</h3><canvas id="occupancyChart"></canvas></div>
+                <div class="chart-container"><h3 class="text-lg font-semibold text-white mb-4">Revenue Sources</h3><canvas id="revenueSourceChart"></canvas></div>
+                <div class="chart-container"><h3 class="text-lg font-semibold text-white mb-4">Bookings by Channel</h3><canvas id="bookingChannelChart"></canvas></div>
+                <div class="chart-container"><h3 class="text-lg font-semibold text-white mb-4">Guest Satisfaction Score</h3><canvas id="satisfactionChart"></canvas></div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="text-center py-4 border-t border-gray-700 mt-auto">
+            <p class="text-sm text-gray-500">&copy; 2025 VisiVault Analytics Ltd. A demo for Aurora Peaks Hotel & Resort.</p>
+        </footer>
+    </div>
+
+    <!-- Gemini Insights Modal -->
+    <div id="insights-modal" class="fixed inset-0 z-50 items-center justify-center hidden p-4 overflow-x-hidden overflow-y-auto bg-gray-900/80">
+        <div class="relative w-full max-w-2xl max-h-full"><div class="relative bg-gray-800 rounded-lg shadow border border-gray-700"><div class="flex items-start justify-between p-4 border-b rounded-t border-gray-600"><h3 class="text-xl font-semibold text-white">✨ AI Generated Insights</h3><button type="button" id="close-modal-btn" class="text-gray-400 bg-transparent hover:bg-gray-700 hover:text-white rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center"><svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/></svg><span class="sr-only">Close modal</span></button></div><div class="p-6 space-y-6"><div id="insights-content" class="text-base leading-relaxed text-gray-300"><p>Generating insights...</p></div></div></div></div>
+    </div>
+
+    <script>
+        let geminiApiKey = '';
+        const generateRandomData = (count, min, max, decimals = 0) => Array.from({ length: count }, () => parseFloat((Math.random() * (max - min) + min).toFixed(decimals)));
+        const chartTextColor = '#9ca3af';
+        const chartGridColor = '#374151';
+        let occupancyChart, revenueSourceChart, bookingChannelChart, satisfactionChart;
+
+        function createCharts() {
+            const occupancyCtx = document.getElementById('occupancyChart').getContext('2d');
+            occupancyChart = new Chart(occupancyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{ label: 'Occupancy %', data: generateRandomData(7, 60, 95), borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', fill: true, tension: 0.4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false, ticks: { color: chartTextColor, callback: (v) => v + '%' }, grid: { color: chartGridColor } }, x: { ticks: { color: chartTextColor }, grid: { color: chartGridColor } } }, plugins: { legend: { labels: { color: chartTextColor } } } }
+            });
+
+            const revenueSourceCtx = document.getElementById('revenueSourceChart').getContext('2d');
+            revenueSourceChart = new Chart(revenueSourceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Rooms', 'Food & Beverage', 'Spa & Wellness', 'Events'],
+                    datasets: [{ data: [65, 20, 10, 5], backgroundColor: ['#38bdf8', '#2dd4bf', '#a78bfa', '#f87171'], borderColor: '#1f2937', borderWidth: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { color: chartTextColor } } } }
+            });
+
+            const bookingChannelCtx = document.getElementById('bookingChannelChart').getContext('2d');
+            bookingChannelChart = new Chart(bookingChannelCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Direct Website', 'Booking.com', 'Expedia', 'Corporate', 'Travel Agents'],
+                    datasets: [{ label: '# of Bookings', data: generateRandomData(5, 50, 250), backgroundColor: '#2dd4bf', borderRadius: 4 }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: chartTextColor }, grid: { color: chartGridColor } }, y: { ticks: { color: chartTextColor }, grid: { display: false } } }, plugins: { legend: { display: false } } }
+            });
+            
+            const satisfactionCtx = document.getElementById('satisfactionChart').getContext('2d');
+            satisfactionChart = new Chart(satisfactionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Excellent (5)', 'Good (4)', 'Average (3)', 'Poor (1-2)'],
+                    datasets: [{ data: generateRandomData(4, 5, 60), backgroundColor: ['#22c55e', '#a3e635', '#facc15', '#ef4444'], borderColor: '#1f2937', borderWidth: 4, }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'right', labels: { color: chartTextColor } } } }
+            });
+        }
+        
+        function updateDashboardWithRandomData() {
+            document.getElementById('kpi-occupancy').textContent = (Math.random() * (95 - 70) + 70).toFixed(1) + '%';
+            document.getElementById('kpi-adr').textContent = '$' + (Math.random() * (350 - 250) + 250).toFixed(2) + ' CAD';
+            document.getElementById('kpi-revpar').textContent = '$' + (Math.random() * (280 - 200) + 200).toFixed(2) + ' CAD';
+            document.getElementById('kpi-stay').textContent = (Math.random() * (4 - 2) + 2).toFixed(1) + ' Nights';
+            
+            occupancyChart.data.datasets[0].data = generateRandomData(7, 60, 95); occupancyChart.update();
+            revenueSourceChart.data.datasets[0].data = generateRandomData(4, 5, 70); revenueSourceChart.update();
+            bookingChannelChart.data.datasets[0].data = generateRandomData(5, 50, 250); bookingChannelChart.update();
+            satisfactionChart.data.datasets[0].data = generateRandomData(4, 5, 60); satisfactionChart.update();
+        }
+
+        function updateDashboardWithData(data) {
+            try {
+                document.getElementById('kpi-occupancy').textContent = data.kpis.occupancy; document.getElementById('kpi-occupancy-change').textContent = data.kpis.occupancyChange;
+                document.getElementById('kpi-adr').textContent = data.kpis.adr; document.getElementById('kpi-adr-change').textContent = data.kpis.adrChange;
+                document.getElementById('kpi-revpar').textContent = data.kpis.revpar; document.getElementById('kpi-revpar-change').textContent = data.kpis.revparChange;
+                document.getElementById('kpi-stay').textContent = data.kpis.stay; document.getElementById('kpi-stay-change').textContent = data.kpis.stayChange;
+
+                occupancyChart.data.labels = data.charts.occupancy.labels; occupancyChart.data.datasets[0].data = data.charts.occupancy.rates; occupancyChart.update();
+                revenueSourceChart.data.labels = data.charts.revenueSource.labels; revenueSourceChart.data.datasets[0].data = data.charts.revenueSource.values; revenueSourceChart.update();
+                bookingChannelChart.data.labels = data.charts.bookingChannel.labels; bookingChannelChart.data.datasets[0].data = data.charts.bookingChannel.bookings; bookingChannelChart.update();
+                satisfactionChart.data.labels = data.charts.satisfaction.labels; satisfactionChart.data.datasets[0].data = data.charts.satisfaction.scores; satisfactionChart.update();
+                
+                const applyBtn = document.getElementById('apply-filters-btn'); applyBtn.disabled = true; applyBtn.textContent = 'Custom Data Loaded'; applyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } catch(e) { alert("Failed to load data. Ensure the JSON file has the correct structure."); console.error("Error updating dashboard with file data:", e); }
+        }
+
+        /*
+            Expected JSON structure for custom data loading:
+            {
+              "kpis": { "occupancy": "85.0%", "occupancyChange": "+4.1%", "adr": "$310.00 CAD", "adrChange": "+$15.00", "revpar": "$263.50 CAD", "revparChange": "+9.0%", "stay": "3.1 Nights", "stayChange": "+0.1 nights" },
+              "charts": {
+                "occupancy": { "labels": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], "rates": [75, 78, 80, 85, 92, 94, 88] },
+                "revenueSource": { "labels": ["Rooms", "F&B", "Spa", "Events"], "values": [70, 18, 8, 4] },
+                "bookingChannel": { "labels": ["Direct", "Booking.com", "Expedia", "Corporate", "Agents"], "bookings": [250, 180, 150, 100, 40] },
+                "satisfaction": { "labels": ["Excellent", "Good", "Average", "Poor"], "scores": [75, 18, 5, 2] }
+              }
+            }
+        */
+
+        async function generateInsights() {
+            const insightsContent = document.getElementById('insights-content');
+            insightsContent.innerHTML = '<p>Generating insights...</p>';
+            document.getElementById('insights-modal').classList.remove('hidden'); document.getElementById('insights-modal').classList.add('flex');
+
+            const kpiData = {
+                occupancy: document.getElementById('kpi-occupancy').textContent,
+                adr: document.getElementById('kpi-adr').textContent,
+                revpar: document.getElementById('kpi-revpar').textContent,
+                stay: document.getElementById('kpi-stay').textContent,
+            };
+            const prompt = `
+                As a senior hospitality analyst from VisiVault Analytics Ltd., provide a brief, executive-level summary for our client, Aurora Peaks Hotel & Resort, based on the following Canadian dashboard data.
+                Your summary should be 2-3 paragraphs in clean HTML. First, give a high-level overview. Second, identify one key opportunity or risk based on the data and suggest a concrete next step.
+
+                **Key Performance Indicators (KPIs):**
+                - Occupancy Rate: ${kpiData.occupancy}
+                - Average Daily Rate (ADR): ${kpiData.adr}
+                - Revenue Per Available Room (RevPAR): ${kpiData.revpar}
+                - Average Length of Stay: ${kpiData.stay}
+                
+                **Chart Data:**
+                - Occupancy Over Time (%): ${occupancyChart.data.datasets[0].data.join(', ')}
+                - Revenue Sources: ${revenueSourceChart.data.labels.map((l, i) => `${l}: ${revenueSourceChart.data.datasets[0].data[i]}%`).join('; ')}
+                - Bookings by Channel: ${bookingChannelChart.data.labels.map((l, i) => `${l}: ${bookingChannelChart.data.datasets[0].data[i]}`).join('; ')}
+                - Guest Satisfaction: ${satisfactionChart.data.labels.map((l, i) => `${l}: ${satisfactionChart.data.datasets[0].data[i]}`).join('; ')}
+            `;
+
+             try {
+                if (!geminiApiKey) throw new Error("API Key is missing.");
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                if (!response.ok) throw new Error(`API call failed: ${response.status}`);
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                insightsContent.innerHTML = text || '<p>The model returned an empty response.</p>';
+            } catch (error) { console.error("Error calling Gemini API:", error); insightsContent.innerHTML = `<p class="text-red-400">An error occurred: ${error.message}. Check the console for details.</p>`; }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            createCharts();
+            geminiApiKey = prompt("Please enter your Google AI API key to enable AI insights:");
+            const generateInsightsBtn = document.getElementById('generate-insights-btn');
+            if (!geminiApiKey) { generateInsightsBtn.disabled = true; generateInsightsBtn.title = "No API Key provided."; generateInsightsBtn.classList.add('opacity-50', 'cursor-not-allowed'); }
+            
+            document.getElementById('apply-filters-btn').addEventListener('click', () => {
+                const btn = document.getElementById('apply-filters-btn');
+                btn.textContent = 'Loading...'; btn.disabled = true;
+                setTimeout(() => { updateDashboardWithRandomData(); btn.textContent = 'Apply Filters'; btn.disabled = false; }, 750);
+            });
+
+            document.getElementById('load-data-btn').addEventListener('click', () => document.getElementById('file-input').click());
+            document.getElementById('file-input').addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => { try { const data = JSON.parse(e.target.result); updateDashboardWithData(data); } catch (err) { alert('Error parsing JSON file.'); console.error(err); } };
+                reader.readAsText(file);
+            });
+
+            generateInsightsBtn.addEventListener('click', generateInsights);
+            document.getElementById('close-modal-btn').addEventListener('click', () => {
+                const modal = document.getElementById('insights-modal');
+                modal.classList.add('hidden'); modal.classList.remove('flex');
+            });
+        });
+    </script>
+</body>
+</html>
